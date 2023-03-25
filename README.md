@@ -6,7 +6,7 @@ https://arxiv.org/abs/2212.14051
 ## How to use the code
 Download all the files in the same folder
 
-The file main.py contains the run_experiment(f_metric, train_num_subn, test_num_subn, trainsh_sd, testsh_sd, device) function. Run this function and call the function in a console with appropriate arguments, or import main in a python file and run main.run_experiment(f_metric, train_num_subn, test_num_subn, trainsh_sd, testsh_sd, device).
+The file main.py contains the run_experiment(f_metric, train_num_subn, test_num_subn, trainsh_sd, testsh_sd, device) function. Run this function and call the function in a console with appropriate arguments, or import main in a python file and run main.run_experiment(f_metric, train_num_subn, test_num_subn, trainsh_sd, testsh_sd, device). See appropriate options for the function arguments below.
 
 f_metric options - hH, dD, hD :The type of graph attribute; hH - use full channel gain, dD - use only distance information, hD - use desired link channel gain and  interfering link distances  
 
@@ -19,6 +19,10 @@ trainsh_sd - the shadowing standard deviation of the training deployments - reas
 testsh_sd - the shadowing standard deviation of the testing environment - reasonable values between 4 and 10
 
 device - Choose appropriate device - 'cuda', 'cpu'
+
+An example: 
+
+run_experiment('hH',20,10,7,4,'cuda')
 
 The results are returned as plots with appropriate titles.
 
