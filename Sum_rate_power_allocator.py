@@ -3,12 +3,17 @@
 Created on Tue Jun 28 09:56:04 2022
 
 @author: Daniel Abode
+
+This code implements the functions for the power control GNN algorithm
+
+References:
+D. Abode, R. Adeogun, and G. Berardinelli, “Power control for 6g industrial wireless subnetworks: A graph neural network approach,”
+2022. [Online]. Available: https://arxiv.org/abs/2212.14051  
 """
 
 import numpy as np                         
 import torch
 from torch_geometric.data import Data
-from torch_geometric.loader import DataLoader
 from torch_geometric.nn.conv import MessagePassing
 from torch.nn import Sequential as Seq, Linear as Lin, ReLU, Sigmoid
 
@@ -129,13 +134,13 @@ class PCGNN(torch.nn.Module):
         out = self.conv(x = x2, edge_index = edge_index, edge_attr = edge_attr)
         return out
     
-def myloss2(out, data, batch_size, num_subnetworks,Noise_power):
+def myloss2(out, data, batch_size, num_subnetworks,Noise_power, device):
     out = out.reshape([-1,num_subnetworks])
 
     out = out.reshape([-1,num_subnetworks,1,1])
     power_mat = data.y.reshape([-1,num_subnetworks,num_subnetworks,1])
     weighted_powers = torch.mul(out,power_mat)
-    eye = torch.eye(num_subnetworks).to('cuda')
+    eye = torch.eye(num_subnetworks).to(device)
     desired_rcv_power = torch.sum(torch.mul(weighted_powers.squeeze(-1),eye), dim=1)
     
     Interference_power = torch.sum(torch.mul(weighted_powers.squeeze(-1),1-eye), dim=1)
@@ -145,15 +150,15 @@ def myloss2(out, data, batch_size, num_subnetworks,Noise_power):
     
     return torch.neg(Capacity_/num_subnetworks)
 
-def train(model2, train_loader, optimizer, num_of_subnetworks, Noise_power):
+def train(model2, train_loader, optimizer, num_of_subnetworks, Noise_power, device):
     model2.train()
     total_loss = 0
     count = 0
     for data in train_loader:
-        data = data.to('cuda')
+        data = data.to(device)
         optimizer.zero_grad()
         out = model2(data)
-        loss = myloss2(out[:,0].to('cuda'), data, data.num_graphs,num_of_subnetworks, Noise_power)
+        loss = myloss2(out[:,0].to(device), data, data.num_graphs,num_of_subnetworks, Noise_power, device)
         total_loss += loss.item()
         count = count+1
         loss.backward()
@@ -162,15 +167,15 @@ def train(model2, train_loader, optimizer, num_of_subnetworks, Noise_power):
     total = total_loss / count   
     return total
 
-def test(model2,validation_loader, num_of_subnetworks, Noise_power):
+def test(model2,validation_loader, num_of_subnetworks, Noise_power, device):
     model2.eval()
     total_loss = 0
     count = 0
     for data in validation_loader:
-        data = data.to('cuda')
+        data = data.to(device)
         with torch.no_grad():
             out = model2(data)
-            loss = myloss2(out[:,0].to('cuda'), data, data.num_graphs,num_of_subnetworks,Noise_power)
+            loss = myloss2(out[:,0].to('cuda'), data, data.num_graphs,num_of_subnetworks,Noise_power, device)
             total_loss += loss.item()
             count = count+1
     total = total_loss / count
@@ -178,16 +183,16 @@ def test(model2,validation_loader, num_of_subnetworks, Noise_power):
     
     return total
 
-def trainmodel(name, model2, scheduler, train_loader, validation_loader, optimizer, num_of_subnetworks, Noise_power):
+def trainmodel(name, model2, scheduler, train_loader, validation_loader, optimizer, num_of_subnetworks, Noise_power, device):
     loss_ = []
     losst_ = []
     for epoch in range(1,1500):
-        losst = train(model2, train_loader, optimizer, num_of_subnetworks, Noise_power)
-        loss1 = test(model2,validation_loader, num_of_subnetworks, Noise_power)
+        losst = train(model2, train_loader, optimizer, num_of_subnetworks, Noise_power, device)
+        loss1 = test(model2,validation_loader, num_of_subnetworks, Noise_power, device)
         loss_.append(loss1)
         losst_.append(losst)
         if (loss1 == min(loss_)):
-            torch.save(model2, 'models/'+str(name))
+            torch.save(model2, str(name))
         print('Epoch {:03d}, Train Loss: {:.4f}, Val Loss: {:.4f}'.format(
             epoch, losst, loss1))
         scheduler.step()
@@ -213,7 +218,7 @@ def mycapacity(weights, data, batch_size, num_subnetworks, Noise_power):
     
     return capacity, weighted_powers 
 
-def GNN_test(GNNmodel, test_loader, num_of_subnetworks, Noise_power):    
+def GNN_test(GNNmodel, test_loader, num_of_subnetworks, Noise_power,device):    
     model2 = torch.load(GNNmodel)
     model2.eval()
     capacities = torch.Tensor()
@@ -222,7 +227,7 @@ def GNN_test(GNNmodel, test_loader, num_of_subnetworks, Noise_power):
     GNN_sum_rate = torch.Tensor()
     Pmax = 1
     for data in test_loader:
-        data = data.to('cuda')
+        data = data.to(device)
         with torch.no_grad():
             out = model2(data)
             cap, GNN_pow = mycapacity(Pmax*out[:,0].cpu(), data.cpu(), data.num_graphs,num_of_subnetworks, Noise_power)        
