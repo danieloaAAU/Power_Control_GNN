@@ -1,9 +1,14 @@
 # -*- coding: utf-8 -*-
 """
 Created on Thu Apr 28 18:23:16 2022
-A class to generate subnetwork deployment
-@author: Ramoni Adeogun, AAU [2022]
+This code include functions to generate subnetwork deployment
+@author: Abode Daniel, Ramoni Adeogun, AAU [2022]
+
+References:
+D. Abode, R. Adeogun, and G. Berardinelli, “Power control for 6g industrial wireless subnetworks: A graph neural network approach,”
+2022. [Online]. Available: https://arxiv.org/abs/2212.14051  
 """
+
 import numpy as np
 from scipy.spatial.distance import cdist
 
@@ -63,24 +68,19 @@ def compute_power(deploy_param, dist):
     S = deploy_param.sigmaS*deploy_param.rng_value.randn(N,N)
     S_linear = 10**(S/10)
     h = (1/np.sqrt(2))*(deploy_param.rng_value.randn(N,N)+1j*deploy_param.rng_value.randn(N,N))
-    power_PC = np.minimum(deploy_param.transmit_power_dBm, deploy_param.P0- 10*np.log10(np.diag((4*np.pi/deploy_param.lambdA)**(-2)\
-        *(np.power(dist,-1*deploy_param.plExponent))*S_linear))).reshape([-1,1])
-    power_PC = (10**(power_PC/10))/deploy_param.transmit_power
-    power_PC = power_PC.reshape(-1)
     #power_PC = np.repeat(power_PC,N,axis=1)
     power = deploy_param.transmit_power*(4*np.pi/deploy_param.lambdA)**(-2)\
         *(np.power(dist,-1*deploy_param.plExponent))\
         *S_linear*np.power(np.abs(h),2)
-    return power, power_PC, S
+    return power, S
 
 def generate_samples(deploy_param,number_of_snapshots):
     N = deploy_param.num_of_subnetworks
     distance_ = np.zeros([number_of_snapshots,N,N])
-    powers = np.zeros([number_of_snapshots,N,N])
-    powers_PC = np.zeros([number_of_snapshots,N])
+    Channel_gain = np.zeros([number_of_snapshots,N,N])
     for k in range(number_of_snapshots):
         dist = create_layout(deploy_param)
-        powers[k,:,:],powers_PC[k,:],S = compute_power(deploy_param,dist)
+        Channel_gain[k,:,:],S = compute_power(deploy_param,dist)
         distance_[k,:,:] = dist
-    return powers, powers_PC, distance_
+    return Channel_gain, distance_
     
