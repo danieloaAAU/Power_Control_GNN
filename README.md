@@ -2,6 +2,20 @@
 These codes are for results presented in the paper - Power Control for 6G Industrial Wireless Subnetworks: A Graph Neural Network Approach
 https://arxiv.org/abs/2212.14051
 
+Bibtex:
+
+```
+@INPROCEEDINGS{10118984,
+  author={Abode, Daniel and Adeogun, Ramoni and Berardinelli, Gilberto},
+  booktitle={2023 IEEE Wireless Communications and Networking Conference (WCNC)}, 
+  title={Power Control for 6G Industrial Wireless Subnetworks: A Graph Neural Network Approach}, 
+  year={2023},
+  volume={},
+  number={},
+  pages={1-6},
+  doi={10.1109/WCNC55385.2023.10118984}}
+```
+
 # About the code
 ## How to use the code
 Download all the files in the same folder
